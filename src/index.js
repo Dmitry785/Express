@@ -1,50 +1,47 @@
 const express = require('express');
-const hbs = require('hbs');
-const expressHbs = require('express-handlebars');
-const path = require("node:path")
+const { ServerApiVersion } = require('mongodb');
+const MongoClient = require('mongodb').MongoClient;
+const dotenv = require('dotenv').config({path: ".env.local"});
+    
+const connection_string = process.env.MONGODB_URI;
+
+const client = new MongoClient(connection_string, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true
+    }
+});
+
+async function run_db(){
+    try{
+        await client.connect(connection_string);
+        const db = client.db("admin");
+        const collection = db.collection("default");
+        await collection.insertOne({name: "admin", password: "1234"});
+        console.log(collection.find().toArray());
+        console.log(`Connected to MongoDB on ${connection_string}`);
+    }
+    catch(err){
+        console.log(err);
+    }
+    finally{
+        await client.close();
+        console.log("MongoDB connection closed");
+    }
+}
+
+run_db(client).catch(console.error);
 
 const _port = 3000;
-const _ip = "0.0.0.0";
+const _ip = "localhost";
 
 const app = express();
 
-app.engine("hbs", expressHbs.engine(
-    {
-        layoutsDir: "views/layouts",
-        defaultLayout: "layout",
-        extname: "hbs",
-        helpers: {
-            tags: function(array){
-                let str = "";
-                if (!Array.isArray(array)) return "";
-                for(let obj of array){
-                    str += `<li>${obj}</li>`;
-                }
-                return new hbs.SafeString(`<ol>${str}</ol>`);
-            },
-            getTime: function(){
-                const date = new Date();
-                return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-            }
-        }
-    }
-))
+app.use("/static", express.static("public"));
+app.use(express.json());
 
-hbs.registerPartials(path.join(__dirname, "..", "views/partials"));
+require('./routes')(app, {})
+require('./handlebars')(app)
 
-app.set("view engine", "hbs");
-
-app.get('/', (req, res) => {
-    res.render("home");
-});
-
-app.use('/contacts', (_, res) => {
-    res.render('contact', {
-        title: "Contacts page",
-        showList: true,
-        list: ["tag 1", "tag 2", "tag 3"]
-    });
-})
-
-
-app.listen(_port, _ip, () => console.log(`open on ${_ip}:${_port}\ndir: ${__dirname}`));
+app.listen(_port, _ip, () => console.log(`open on ${_ip}:${_port}`));
