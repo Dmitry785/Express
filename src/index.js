@@ -12,7 +12,21 @@ app.engine("hbs", expressHbs.engine(
     {
         layoutsDir: "views/layouts",
         defaultLayout: "layout",
-        extname: "hbs"
+        extname: "hbs",
+        helpers: {
+            tags: function(array){
+                let str = "";
+                if (!Array.isArray(array)) return "";
+                for(let obj of array){
+                    str += `<li>${obj}</li>`;
+                }
+                return new hbs.SafeString(`<ol>${str}</ol>`);
+            },
+            getTime: function(){
+                const date = new Date();
+                return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+            }
+        }
     }
 ))
 
