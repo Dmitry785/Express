@@ -1,0 +1,200 @@
+<h1>Список пользователей</h1>
+<button id="load__btn">Load</button>
+<form>
+    <p>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name">
+    </p>
+    <p>
+        <label for="age">Age:</label>
+        <input type="number" id="age" name="age">
+    </p>
+    <button type="submit">Create</button>
+</form>
+<table id="users-list">
+    <thead>
+        <th>
+            Id
+        </th>
+        <th>
+            Name
+        </th>
+        <th>
+            Age
+        </th>
+    </thead>
+    <tbody>
+
+    </tbody>
+</table>
+<script>
+    const table = document.querySelector('#users-list tbody');
+    const form = document.querySelector('form');
+    let is_editing = false;
+    form.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const formData = GetFormData();
+        await CreateUser(formData.name, formData.age);
+    })
+    document.querySelector('#load__btn').addEventListener('click', async ()=>{
+        UpdateUsersTable(await LoadUsers());
+    })
+    function GetFormData(){
+        const formData = Object.fromEntries(new FormData(form).entries());
+        return formData;
+    }
+    async function LoadUsers(){
+        const responce = await fetch('/api/users', {
+            method: "GET",
+            headers: {"Accept": "application/json"}
+        });
+        if (responce.ok){
+            const users = await responce.json();
+            return users;
+        }
+    }
+    async function CreateUser(name, age){
+        if (name == '' || age == '')
+            return;
+        let responce = await fetch('/api/users', {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({name: name, age: age})
+        });
+        if (responce.ok){
+            responce = await responce.json();
+            console.log(responce);
+        }
+    }
+    async function DeleteUser(id){
+        let responce = await fetch(`/api/users/${id}`, {
+            method: "DELETE",
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+        if (responce.ok){
+            responce = await responce.json();
+            console.log(responce);
+        }
+    }
+    async function GetUser(id){
+        let responce = await fetch(`/api/users/${id}`, {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+        if (responce.ok){
+            responce = await responce.json();
+            console.log(responce);
+        }
+    }
+    async function EditUser(id, name, age){
+        if (name == '' || age == '')
+            return;
+        let responce = await fetch('/api/users/', {
+            method: "PUT",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({id: id, name: name, age: age})
+        });
+        if (responce.ok){
+            responce = await responce.json();
+            console.log(responce);
+        }
+    }
+    function UpdateUsersTable(users){
+        table.replaceChildren();
+        for(let user of users){
+            table.appendChild((()=>{
+                const tr = document.createElement('tr');
+                tr.appendChild((()=>{
+                    const td = document.createElement('td');
+                    td.textContent = user._id ? user._id : "null";
+                    return td;
+                })());
+                tr.appendChild((()=>{
+                    const td = document.createElement('td');
+                    td.textContent = user.name ? user.name : "null";
+                    return td;
+                })());
+                tr.appendChild((()=>{
+                    const td = document.createElement('td');
+                    td.textContent = user.age ? user.age : "null";
+                    return td;
+                })());
+                tr.appendChild((()=>{
+                    const td = document.createElement('td');
+                    td.appendChild((()=>{
+                        const edit_button = document.createElement('button');
+                        edit_button.textContent = "Edit";
+                        edit_button.addEventListener('click', ()=>
+                            StartEdit(user._id, user.name, user.age));
+                        return edit_button;
+                    })());
+                    return td;
+                })());
+                tr.appendChild((()=>{
+                    const td = document.createElement('td');
+                    td.appendChild((()=>{
+                        const delete_button = document.createElement('button');
+                        delete_button.textContent = "Delete";
+                        delete_button.addEventListener('click', async ()=>{
+                                DeleteUser(user._id);
+                                UpdateUsersTable(await LoadUsers());
+                            });
+                        return delete_button;
+                    })());
+                    return td;
+                })());
+                return tr;
+            })());
+        }
+    }
+    function StartEdit(id, name, age){
+        if (is_editing)
+            CancelEdit();
+        is_editing = true;
+        form.replaceChild((()=>{
+            const edit_button = document.createElement('button');
+            edit_button.id = "edit__btn";
+            edit_button.textContent = `Edit ${id}`;
+            edit_button.addEventListener('click', async ()=>{
+                const formData = GetFormData();
+                CancelEdit();
+                EditUser(id, formData.name, formData.age);
+                UpdateUsersTable(await LoadUsers());
+            });
+            return edit_button;
+        })(), form.querySelector('button[type=submit]'), );
+        form.appendChild((()=>{
+            const cancel_button = document.createElement('button');
+            cancel_button.id = "cancel__btn";
+            cancel_button.textContent = `Cancel edit`;
+            cancel_button.addEventListener('click', ()=>{
+                CancelEdit();
+            })
+            return cancel_button;
+        })());
+        form.querySelector("#name").value = name;
+        form.querySelector("#age").value = age;
+    }
+    function CancelEdit(){
+        is_editing=false;
+        form.replaceChild((()=>{
+            const create_button = document.createElement('button');
+            create_button.type = "submit";
+            create_button.textContent = "Create";
+            return create_button;
+        })(), form.querySelector('#edit__btn'));
+        form.removeChild(form.querySelector("#cancel__btn"));
+        form.querySelector("#name").value = "";
+        form.querySelector("#age").value = "";
+    }
+</script>
