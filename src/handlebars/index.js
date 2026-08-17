@@ -4,7 +4,7 @@ module.exports = function(app){
 
     app.engine("hbs", engine(
         {
-            layoutsDir: "views/layouts",
+            layoutsDir: "src/views/layouts",
             defaultLayout: "layout",
             extname: "hbs",
             helpers: {
@@ -21,8 +21,9 @@ module.exports = function(app){
                     return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
                 }
             },
-            partialsDir: "views/partials",
+            partialsDir: "src/views/partials",
         }
     ));
     app.set("view engine", "hbs");
+    app.set("views", "src/views");
 }
