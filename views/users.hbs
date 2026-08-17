@@ -24,7 +24,13 @@
         </th>
     </thead>
     <tbody>
-
+        {{#each users}}
+            <tr>
+                <td>{{this._id}}</td>
+                <td>{{this.name}}</td>
+                <td>{{this.age}}</td>
+            </tr>
+        {{/each}}
     </tbody>
 </table>
 <script>
@@ -35,6 +41,7 @@
         e.preventDefault();
         const formData = GetFormData();
         await CreateUser(formData.name, formData.age);
+        UpdateUsersTable(await LoadUsers());
     })
     document.querySelector('#load__btn').addEventListener('click', async ()=>{
         UpdateUsersTable(await LoadUsers());
@@ -50,8 +57,12 @@
         });
         if (responce.ok){
             const users = await responce.json();
-            return users;
+            if(users){
+                console.log(`loaded ${users.length} users`);
+                return users;
+            }
         }
+        return [];
     }
     async function CreateUser(name, age){
         if (name == '' || age == '')

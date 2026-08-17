@@ -9,9 +9,9 @@ require('./mongodb')()
         console.error("Couldn't connected to MongoDB");
         process.exit(0);
     })
-    .then(collection => {
+    .then(userModel => {
         const app = express();
-        app.locals.collection = collection;
+        app.locals.userModel = userModel;
         main(app);
     });
 
@@ -24,7 +24,7 @@ function main(app) {
 
     app.listen(_port, _ip, () => console.log(`open on ${_ip}:${_port}`));
     process.on("SIGINT", async ()=>{
-        app.locals.collection.db.client.close();
+        app.locals.userModel.db.close();
         console.log("MongoDB connection have closed");
         console.log("Program is closing");
         process.exit();
