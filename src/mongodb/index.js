@@ -1,4 +1,12 @@
-module.exports = async function(client, connection_string){
+const { MongoClient } = require('mongodb');
+
+const connection_string = process.env.MONGODB_URI;
+
+const client = new MongoClient(connection_string, {
+    connectTimeoutMS: 1000,
+    serverSelectionTimeoutMS: 1000
+});
+module.exports = async function(){
     try{
         console.log(`Connecting to MongoDB on ${connection_string}`)
         await client.connect();
